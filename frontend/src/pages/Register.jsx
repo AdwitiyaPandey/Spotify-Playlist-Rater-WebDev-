@@ -12,9 +12,17 @@ function Register() {
     confirmPassword: ""
   });
 
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  const getErrorMessage = (err, fallback) => {
+    const responseData = err.response?.data;
+    if (typeof responseData === "string") return responseData;
+    if (responseData?.message) return responseData.message;
+    return fallback;
+  };
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -39,15 +47,25 @@ function Register() {
     setError("");
 
     try {
-      await axios.post("http://localhost:5000/api/auth/register", {
-        username: form.username,
-        email: form.email,
-        password: form.password
-      });
+      await axios.post(
+        "http://localhost:5000/api/auth/register",
+        {
+          username: form.username,
+          email: form.email,
+          password: form.password
+        },
+        {
+          timeout: 5000
+        }
+      );
 
       navigate("/login");
     } catch (err) {
-      setError(err.response?.data || "Registration failed");
+      if (err.code === "ECONNABORTED") {
+        setError("Registration timed out after 5 seconds. Please try again.");
+      } else {
+        setError(getErrorMessage(err, "Registration failed"));
+      }
     } finally {
       setLoading(false);
     }
@@ -84,7 +102,7 @@ function Register() {
 
           <label>Password</label>
           <input
-            type="password"
+            type={showPassword ? "text" : "password"}
             name="password"
             value={form.password}
             onChange={handleChange}
@@ -93,12 +111,22 @@ function Register() {
 
           <label>Confirm Password</label>
           <input
-            type="password"
+            type={showPassword ? "text" : "password"}
             name="confirmPassword"
             value={form.confirmPassword}
             onChange={handleChange}
             disabled={loading}
           />
+
+          <label>
+            <input
+              type="checkbox"
+              checked={showPassword}
+              onChange={(e) => setShowPassword(e.target.checked)}
+              disabled={loading}
+            />
+            Show password
+          </label>
 
           <button disabled={loading}>
             {loading ? "Creating Account..." : "Create Account"}

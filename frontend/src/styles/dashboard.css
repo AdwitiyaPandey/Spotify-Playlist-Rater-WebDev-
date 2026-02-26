@@ -1,0 +1,125 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+}
+
+.dashboard-container {
+  display: flex;
+  min-height: 100vh;
+  background: #121212;
+  color: white;
+}
+
+.sidebar {
+  width: 240px;
+  background: #000;
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.logo {
+  color: #1db954;
+  font-size: 22px;
+  margin-bottom: 40px;
+}
+
+.nav-btn {
+  display: block;
+  width: 100%;
+  background: none;
+  border: none;
+  color: #ccc;
+  text-align: left;
+  margin-bottom: 15px;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.nav-btn:hover {
+  color: #1db954;
+}
+
+.active {
+  color: #1db954;
+}
+
+.logout-btn {
+  background: #1db954;
+  border: none;
+  padding: 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: white;
+}
+
+.dashboard-main {
+  flex: 1;
+  padding: 40px;
+}
+
+.dashboard-title {
+  margin-bottom: 30px;
+}
+
+
+.analyzer-card {
+  background: #181818;
+  padding: 25px;
+  border-radius: 12px;
+  margin-bottom: 30px;
+}
+
+.input-area {
+  margin-top: 15px;
+  display: flex;
+}
+
+.input-area input {
+  flex: 1;
+  padding: 12px;
+  border-radius: 6px;
+  border: none;
+  background: #2a2a2a;
+  color: white;
+}
+
+.input-area button {
+  margin-left: 10px;
+  padding: 12px 18px;
+  border: none;
+  background: #1db954;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+
+.result-card {
+  background: #181818;
+  padding: 25px;
+  border-radius: 12px;
+}
+
+
+
+.rating-box,
+.genre-box {
+  margin-bottom: 20px;
+}
+
+.rating-box p {
+  font-size: 28px;
+  color: #1db954;
+}
+
+
+
+.recommend-box ul {
+  padding-left: 15px;
+}
+
+.recommend-box li {
+  margin-bottom: 8px;
+  color: #ccc;
+}

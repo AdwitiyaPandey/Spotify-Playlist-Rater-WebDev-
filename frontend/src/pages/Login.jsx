@@ -7,9 +7,17 @@ import heroImage from "../assets/headphonecat.jpg";
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+
+  const getErrorMessage = (err, fallback) => {
+    const responseData = err.response?.data;
+    if (typeof responseData === "string") return responseData;
+    if (responseData?.message) return responseData.message;
+    return fallback;
+  };
 
   const login = async (e) => {
     e.preventDefault();
@@ -23,13 +31,24 @@ function Login() {
     setLoading(true);
 
     try {
-      await axios.post("http://localhost:5000/api/auth/login", {
-        email,
-        password
-      });
-      alert("Logged in successfully");
+      const res = await axios.post(
+        "http://localhost:5000/api/auth/login",
+        {
+          email,
+          password
+        },
+        {
+          timeout: 5000
+        }
+      );
+      localStorage.setItem("authUser", JSON.stringify(res.data));
+      navigate("/dashboard");
     } catch (err) {
-      setError(err.response?.data || "Login failed. Please try again.");
+      if (err.code === "ECONNABORTED") {
+        setError("Login timed out after 5 seconds. Please try again.");
+      } else {
+        setError(getErrorMessage(err, "Login failed. Please try again."));
+      }
     } finally {
       setLoading(false);
     }
@@ -56,12 +75,22 @@ function Login() {
 
           <label>Password</label>
           <input
-            type="password"
+            type={showPassword ? "text" : "password"}
             placeholder="••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             disabled={loading}
           />
+
+          <label>
+            <input
+              type="checkbox"
+              checked={showPassword}
+              onChange={(e) => setShowPassword(e.target.checked)}
+              disabled={loading}
+            />
+            Show password
+          </label>
 
           <button type="submit" className="auth-primary-btn" disabled={loading}>
             {loading ? "Signing in..." : "Sign In"}
@@ -76,9 +105,6 @@ function Login() {
             Create New Account
           </button>
 
-          <p className="auth-switch">
-            Don’t have an account? <span onClick={() => navigate("/register")}>Sign Up</span>
-          </p>
         </form>
 
         <div className="auth-image-panel">
