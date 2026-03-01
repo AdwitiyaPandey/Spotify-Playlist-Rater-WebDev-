@@ -1,16 +1,25 @@
 const express = require("express");
 const cors = require("cors");
+require("dotenv").config();
+
 const authRoutes = require("../routes/auth");
+const playlistRoutes = require("../routes/playlist");
+const adminRoutes = require("../routes/admin");
+
 const app = express();
+const PORT = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
+
 app.use("/api/auth", authRoutes);
+app.use("/api/playlist", playlistRoutes);
+app.use("/api/admin", adminRoutes);
 
 app.get("/", (req, res) => {
-  res.send("Backend running 🚀");
+  res.json({ message: "Backend running" });
 });
 
-app.listen(5000, () => {
-  console.log("Server running on port 5000");
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
