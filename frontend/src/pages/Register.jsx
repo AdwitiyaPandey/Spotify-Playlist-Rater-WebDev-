@@ -21,6 +21,15 @@ function Register() {
     const responseData = err.response?.data;
     if (typeof responseData === "string") return responseData;
     if (responseData?.message) return responseData.message;
+
+    if (err.code === "ECONNABORTED") {
+      return "Registration timed out. Make sure backend is running and try again.";
+    }
+
+    if (!err.response) {
+      return "Cannot reach server. Start backend on http://localhost:5000 and check database connection.";
+    }
+
     return fallback;
   };
 
@@ -50,22 +59,18 @@ function Register() {
       await axios.post(
         "http://localhost:5000/api/auth/register",
         {
-          username: form.username,
-          email: form.email,
+          username: form.username.trim(),
+          email: form.email.trim(),
           password: form.password
         },
         {
-          timeout: 5000
+          timeout: 10000
         }
       );
 
       navigate("/login");
     } catch (err) {
-      if (err.code === "ECONNABORTED") {
-        setError("Registration timed out after 5 seconds. Please try again.");
-      } else {
-        setError(getErrorMessage(err, "Registration failed"));
-      }
+      setError(getErrorMessage(err, "Registration failed"));
     } finally {
       setLoading(false);
     }

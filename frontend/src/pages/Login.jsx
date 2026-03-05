@@ -23,7 +23,7 @@ function Login() {
     e.preventDefault();
 
     if (!email.trim() || !password.trim()) {
-      setError("Please enter both email and password");
+      setError("Please enter username/email and password");
       return;
     }
 
@@ -64,10 +64,10 @@ function Login() {
 
           {error && <div className="auth-error">{error}</div>}
 
-          <label>Email</label>
+          <label>Username or Email</label>
           <input
-            type="email"
-            placeholder="you@example.com"
+            type="text"
+            placeholder="admin123 or you@example.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             disabled={loading}

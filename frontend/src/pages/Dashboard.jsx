@@ -17,7 +17,12 @@ function Dashboard() {
   const [activeView, setActiveView] = useState("analyze");
 
   const navigate = useNavigate();
-  const user = JSON.parse(localStorage.getItem("authUser") || "null");
+  let user = null;
+  try {
+    user = JSON.parse(localStorage.getItem("authUser") || "null");
+  } catch {
+    user = null;
+  }
 
   const getErrorMessage = (err, fallback) => {
     const responseData = err.response?.data;
@@ -27,21 +32,21 @@ function Dashboard() {
   };
 
   const fetchHistory = useCallback(async () => {
-    if (!user?.id) {
-      setHistory([]);
-      return;
-    }
-
     setHistoryLoading(true);
     try {
-      const res = await axios.get(`${API_BASE}/playlist/history/${user.id}`);
+      const res = await axios.get(`${API_BASE}/playlist/history`, {
+        params: {
+          userId: user?.id,
+          email: user?.email
+        }
+      });
       setHistory(res.data || []);
     } catch (err) {
       setError(getErrorMessage(err, "Failed to fetch your rating history"));
     } finally {
       setHistoryLoading(false);
     }
-  }, [user?.id]);
+  }, [user?.id, user?.email]);
 
   useEffect(() => {
     fetchHistory();
@@ -65,7 +70,8 @@ function Dashboard() {
         `${API_BASE}/playlist/analyze`,
         {
           playlistUrl: url,
-          userId: user?.id || null
+          userId: user?.id || null,
+          userEmail: user?.email || null
         },
         {
           timeout: 10000
@@ -150,11 +156,6 @@ function Dashboard() {
                   <p>{result.topGenre}</p>
                 </div>
 
-                <div className="feedback-box">
-                  <h2>AI Feedback</h2>
-                  <p>{result.feedback}</p>
-                </div>
-
                 <div className="recommend-box">
                   <h2>Recommended Songs</h2>
 
@@ -168,6 +169,23 @@ function Dashboard() {
                 </div>
               </div>
             )}
+
+            <div className="history-card">
+              <h2>Recently Rated Playlists</h2>
+              {historyLoading ? <p>Loading history...</p> : null}
+              {!historyLoading && history.length === 0 ? <p>No playlists rated yet.</p> : null}
+              <div className="history-list">
+                {history.slice(0, 5).map((entry) => (
+                  <div key={entry.id} className="history-item">
+                    <h3>{entry.name || "Untitled Playlist"}</h3>
+                    <p>
+                      Score: <strong>{entry.rating}/10</strong>
+                    </p>
+                    <p>Top Genre: {entry.top_genre || "Unknown"}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </>
         ) : (
           <div className="history-card">
@@ -186,7 +204,6 @@ function Dashboard() {
                     Score: <strong>{entry.rating}/10</strong>
                   </p>
                   <p>Top Genre: {entry.top_genre || "Unknown"}</p>
-                  <p>{entry.feedback}</p>
                 </div>
               ))}
             </div>

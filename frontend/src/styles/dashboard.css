@@ -29,7 +29,7 @@ body {
 .sidebar-user {
   color: #9ea0a7;
   font-size: 13px;
-  margin: 0 0 24px;
+  margin: 0 0 10px;
 }
 
 .nav-btn {
@@ -39,7 +39,7 @@ body {
   border: none;
   color: #ccc;
   text-align: left;
-  margin-bottom: 15px;
+  margin-bottom: 8px;
   font-size: 15px;
   cursor: pointer;
 }
