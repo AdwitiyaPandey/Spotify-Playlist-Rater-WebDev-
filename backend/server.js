@@ -4,8 +4,12 @@ const cors = require("cors");
 const authRoutes = require("./routes/auth");
 const app = express();
 
-app.use(cors());
-app.use(express.json());
+const allowedOrigins = process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(",").map((o) => o.trim())
+    : ["http://localhost:5173"];
+
+app.use(cors({ origin: allowedOrigins }));
+app.use(express.json({ limit: "1mb" }));
 
 app.use("/api/auth", authRoutes);
 app.listen(5000, () => {

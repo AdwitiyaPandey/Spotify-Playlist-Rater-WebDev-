@@ -4,6 +4,8 @@ jest.mock("../db", () => ({
   query: jest.fn()
 }));
 
+jest.mock("../middleware/requireAdmin", () => (req, res, next) => next());
+
 const pool = require("../db");
 const app = require("../src/app");
 

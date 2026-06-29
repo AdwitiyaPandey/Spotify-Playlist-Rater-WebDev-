@@ -342,18 +342,6 @@ router.get("/history", async (req, res) => {
       rows = byEmail.rows;
     }
 
-    if (rows.length === 0) {
-      const recent = await pool.query(
-        `
-          SELECT id, name, playlist_url, rating, top_genre, created_at
-          FROM playlists
-          ORDER BY created_at DESC
-          LIMIT 20
-        `
-      );
-      rows = recent.rows;
-    }
-
     res.json(rows);
   } catch (err) {
     console.error("Failed to fetch history:", err.message);
