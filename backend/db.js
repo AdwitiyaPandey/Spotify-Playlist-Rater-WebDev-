@@ -8,4 +8,8 @@ const pool = new Pool({
     database: "WebDev(Spotify)", 
 });
 
+pool.on("error", (err) => {
+    console.error("Unexpected PostgreSQL pool error:", err.message);
+});
+
 module.exports = pool;

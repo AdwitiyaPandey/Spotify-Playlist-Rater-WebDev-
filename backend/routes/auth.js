@@ -10,20 +10,26 @@ const DEFAULT_ADMIN = {
 };
 
 async function ensureUsersTable() {
-    await pool.query(`
-        CREATE TABLE IF NOT EXISTS users (
-            id SERIAL PRIMARY KEY,
-            username TEXT UNIQUE NOT NULL,
-            email TEXT UNIQUE NOT NULL,
-            password TEXT NOT NULL,
-            is_admin BOOLEAN DEFAULT FALSE,
-            created_at TIMESTAMP DEFAULT NOW()
-        )
-    `);
+    try {
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                username TEXT UNIQUE NOT NULL,
+                email TEXT UNIQUE NOT NULL,
+                password TEXT NOT NULL,
+                is_admin BOOLEAN DEFAULT FALSE,
+                created_at TIMESTAMP DEFAULT NOW()
+            )
+        `);
 
-    // Keep older local schemas compatible with current auth/admin logic.
-    await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE");
-    await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW()");
+        // Keep older local schemas compatible with current auth/admin logic.
+        await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE");
+        await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW()");
+    } catch (err) {
+        const wrapped = new Error(`Failed to initialize users table: ${err.message}`);
+        wrapped.cause = err;
+        throw wrapped;
+    }
 }
 
 async function ensureDefaultAdminUser() {
@@ -61,13 +67,18 @@ async function ensureDefaultAdminUser() {
         if (err.code !== "23505") throw err;
 
         const fallbackEmail = `${DEFAULT_ADMIN.username}_${Date.now()}@local.admin`;
-        await pool.query(
-            `
-                INSERT INTO users (username, email, password, is_admin)
-                VALUES ($1, $2, $3, TRUE)
-            `,
-            [DEFAULT_ADMIN.username, fallbackEmail, hashedAdminPassword]
-        );
+        try {
+            await pool.query(
+                `
+                    INSERT INTO users (username, email, password, is_admin)
+                    VALUES ($1, $2, $3, TRUE)
+                `,
+                [DEFAULT_ADMIN.username, fallbackEmail, hashedAdminPassword]
+            );
+        } catch (retryErr) {
+            console.error("Failed to create default admin with fallback email:", retryErr.message);
+            throw retryErr;
+        }
     }
 }
 

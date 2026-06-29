@@ -3,18 +3,24 @@ const router = express.Router();
 const pool = require("../db"); // postgres connection
 
 async function ensurePlaylistsTable() {
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS playlists (
-      id SERIAL PRIMARY KEY,
-      user_id INTEGER,
-      name TEXT,
-      playlist_url TEXT,
-      rating INTEGER,
-      top_genre TEXT,
-      feedback TEXT,
-      created_at TIMESTAMP DEFAULT NOW()
-    )
-  `);
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS playlists (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER,
+        name TEXT,
+        playlist_url TEXT,
+        rating INTEGER,
+        top_genre TEXT,
+        feedback TEXT,
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+  } catch (err) {
+    const wrapped = new Error(`Failed to initialize playlists table: ${err.message}`);
+    wrapped.cause = err;
+    throw wrapped;
+  }
 }
 
 // get all users
