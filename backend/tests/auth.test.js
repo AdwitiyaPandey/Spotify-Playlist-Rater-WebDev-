@@ -5,6 +5,8 @@ jest.mock("../db", () => ({
   query: jest.fn()
 }));
 
+jest.mock("../middleware/requireAdmin", () => (req, res, next) => next());
+
 const pool = require("../db");
 const app = require("../src/app");
 
@@ -12,7 +14,7 @@ describe("Auth routes", () => {
   let hashedAdminPassword;
 
   beforeAll(async () => {
-    hashedAdminPassword = await bcrypt.hash("@dmin_0987", 10);
+    hashedAdminPassword = await bcrypt.hash(process.env.DEFAULT_ADMIN_PASSWORD || "changeme", 10);
   });
 
   beforeEach(() => {
@@ -62,7 +64,7 @@ describe("Auth routes", () => {
 
     const res = await request(app)
       .post("/api/auth/login")
-      .send({ email: "admin123", password: "@dmin_0987" });
+      .send({ email: "admin123", password: process.env.DEFAULT_ADMIN_PASSWORD || "changeme" });
 
     expect(res.status).toBe(200);
     expect(res.body.username).toBe("admin123");

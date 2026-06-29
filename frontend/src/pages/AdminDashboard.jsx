@@ -6,6 +6,15 @@ import "../styles/dashboard.css";
 
 const API_BASE = "http://localhost:5000/api/admin";
 
+function getAdminHeaders() {
+  try {
+    const user = JSON.parse(localStorage.getItem("authUser") || "null");
+    return user?.id ? { "x-user-id": String(user.id) } : {};
+  } catch {
+    return {};
+  }
+}
+
 function AdminDashboard() {
   const navigate = useNavigate();
   const [users, setUsers] = useState([]);
@@ -30,10 +39,11 @@ function AdminDashboard() {
     setError("");
 
     try {
+      const headers = getAdminHeaders();
       const [usersRes, playlistsRes, statsRes] = await Promise.all([
-        axios.get(`${API_BASE}/users`),
-        axios.get(`${API_BASE}/playlists`),
-        axios.get(`${API_BASE}/stats`)
+        axios.get(`${API_BASE}/users`, { headers }),
+        axios.get(`${API_BASE}/playlists`, { headers }),
+        axios.get(`${API_BASE}/stats`, { headers })
       ]);
 
       setUsers(usersRes.data || []);
@@ -52,7 +62,7 @@ function AdminDashboard() {
 
   const deleteUser = async (id) => {
     try {
-      await axios.delete(`${API_BASE}/users/${id}`);
+      await axios.delete(`${API_BASE}/users/${id}`, { headers: getAdminHeaders() });
       fetchData();
     } catch (err) {
       setError(getErrorMessage(err, "Failed to delete user"));
@@ -61,7 +71,7 @@ function AdminDashboard() {
 
   const deletePlaylist = async (id) => {
     try {
-      await axios.delete(`${API_BASE}/playlists/${id}`);
+      await axios.delete(`${API_BASE}/playlists/${id}`, { headers: getAdminHeaders() });
       fetchData();
     } catch (err) {
       setError(getErrorMessage(err, "Failed to delete playlist"));

@@ -4,9 +4,9 @@ const pool = require ("../db");
 
 const BCRYPT_SALT_ROUNDS = 10;
 const DEFAULT_ADMIN = {
-    username: "admin123",
-    email: "admin123@local.admin",
-    password: "@dmin_0987"
+    username: process.env.DEFAULT_ADMIN_USERNAME || "admin123",
+    email: process.env.DEFAULT_ADMIN_EMAIL || "admin123@local.admin",
+    password: process.env.DEFAULT_ADMIN_PASSWORD || "changeme"
 };
 
 async function ensureUsersTable() {
@@ -79,6 +79,18 @@ router.post("/register",async (req, res) =>  {
 
         if (!username || !email || !password) {
             return res.status(400).json({ message: "Username, email and password are required" });
+        }
+
+        if (typeof username !== "string" || username.trim().length < 1 || username.trim().length > 100) {
+            return res.status(400).json({ message: "Username must be between 1 and 100 characters" });
+        }
+
+        if (typeof email !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            return res.status(400).json({ message: "Invalid email format" });
+        }
+
+        if (typeof password !== "string" || password.length < 6) {
+            return res.status(400).json({ message: "Password must be at least 6 characters" });
         }
 
         const existingUser = await pool.query(
