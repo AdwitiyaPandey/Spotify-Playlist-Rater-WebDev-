@@ -1,6 +1,6 @@
 import { useState } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { apiClient, getErrorMessage } from "../utils/api";
 import "../styles/auth.css";
 import heroImage from "../assets/headphonecat.jpg";
 
@@ -11,13 +11,6 @@ function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
-
-  const getErrorMessage = (err, fallback) => {
-    const responseData = err.response?.data;
-    if (typeof responseData === "string") return responseData;
-    if (responseData?.message) return responseData.message;
-    return fallback;
-  };
 
   const login = async (e) => {
     e.preventDefault();
@@ -31,24 +24,11 @@ function Login() {
     setLoading(true);
 
     try {
-      const res = await axios.post(
-        "http://localhost:5000/api/auth/login",
-        {
-          email,
-          password
-        },
-        {
-          timeout: 5000
-        }
-      );
+      const res = await apiClient.post("/auth/login", { email, password });
       localStorage.setItem("authUser", JSON.stringify(res.data));
       navigate("/dashboard");
     } catch (err) {
-      if (err.code === "ECONNABORTED") {
-        setError("Login timed out after 5 seconds. Please try again.");
-      } else {
-        setError(getErrorMessage(err, "Login failed. Please try again."));
-      }
+      setError(getErrorMessage(err, "Login failed. Please try again."));
     } finally {
       setLoading(false);
     }

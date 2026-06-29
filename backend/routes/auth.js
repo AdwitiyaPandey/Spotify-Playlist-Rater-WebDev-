@@ -1,6 +1,7 @@
 const router = require("express").Router();
 const bcrypt = require ("bcrypt");
 const pool = require ("../db");
+const { ensureUsersTable } = require("../utils/ensureTables");
 
 const BCRYPT_SALT_ROUNDS = 10;
 const DEFAULT_ADMIN = {
@@ -8,23 +9,6 @@ const DEFAULT_ADMIN = {
     email: "admin123@local.admin",
     password: "@dmin_0987"
 };
-
-async function ensureUsersTable() {
-    await pool.query(`
-        CREATE TABLE IF NOT EXISTS users (
-            id SERIAL PRIMARY KEY,
-            username TEXT UNIQUE NOT NULL,
-            email TEXT UNIQUE NOT NULL,
-            password TEXT NOT NULL,
-            is_admin BOOLEAN DEFAULT FALSE,
-            created_at TIMESTAMP DEFAULT NOW()
-        )
-    `);
-
-    // Keep older local schemas compatible with current auth/admin logic.
-    await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE");
-    await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW()");
-}
 
 async function ensureDefaultAdminUser() {
     await ensureUsersTable();

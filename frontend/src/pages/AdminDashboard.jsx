@@ -1,10 +1,8 @@
-import { useEffect, useState } from "react";
-import { useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { apiClient, getErrorMessage } from "../utils/api";
+import { logout } from "../utils/auth";
 import "../styles/dashboard.css";
-
-const API_BASE = "http://localhost:5000/api/admin";
 
 function AdminDashboard() {
   const navigate = useNavigate();
@@ -18,22 +16,15 @@ function AdminDashboard() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const getErrorMessage = (err, fallback) => {
-    const responseData = err.response?.data;
-    if (typeof responseData === "string") return responseData;
-    if (responseData?.message) return responseData.message;
-    return fallback;
-  };
-
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError("");
 
     try {
       const [usersRes, playlistsRes, statsRes] = await Promise.all([
-        axios.get(`${API_BASE}/users`),
-        axios.get(`${API_BASE}/playlists`),
-        axios.get(`${API_BASE}/stats`)
+        apiClient.get("/admin/users"),
+        apiClient.get("/admin/playlists"),
+        apiClient.get("/admin/stats")
       ]);
 
       setUsers(usersRes.data || []);
@@ -52,7 +43,7 @@ function AdminDashboard() {
 
   const deleteUser = async (id) => {
     try {
-      await axios.delete(`${API_BASE}/users/${id}`);
+      await apiClient.delete(`/admin/users/${id}`);
       fetchData();
     } catch (err) {
       setError(getErrorMessage(err, "Failed to delete user"));
@@ -61,17 +52,14 @@ function AdminDashboard() {
 
   const deletePlaylist = async (id) => {
     try {
-      await axios.delete(`${API_BASE}/playlists/${id}`);
+      await apiClient.delete(`/admin/playlists/${id}`);
       fetchData();
     } catch (err) {
       setError(getErrorMessage(err, "Failed to delete playlist"));
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem("authUser");
-    navigate("/login");
-  };
+  const handleLogout = () => logout(navigate);
 
   return (
     <div className="admin-dashboard">
@@ -79,7 +67,7 @@ function AdminDashboard() {
         <h1>Admin Dashboard</h1>
         <div className="admin-actions">
           <button className="nav-btn" onClick={() => navigate("/dashboard")}>User View</button>
-          <button className="logout-btn" onClick={logout}>Logout</button>
+          <button className="logout-btn" onClick={handleLogout}>Logout</button>
         </div>
       </div>
 

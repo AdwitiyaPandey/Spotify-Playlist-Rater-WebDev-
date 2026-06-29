@@ -1,6 +1,6 @@
 import { useState } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { apiClient, getErrorMessage } from "../utils/api";
 import "../styles/register.css";
 import catImg from "../assets/screamingcat.jpg";
 
@@ -16,22 +16,6 @@ function Register() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-
-  const getErrorMessage = (err, fallback) => {
-    const responseData = err.response?.data;
-    if (typeof responseData === "string") return responseData;
-    if (responseData?.message) return responseData.message;
-
-    if (err.code === "ECONNABORTED") {
-      return "Registration timed out. Make sure backend is running and try again.";
-    }
-
-    if (!err.response) {
-      return "Cannot reach server. Start backend on http://localhost:5000 and check database connection.";
-    }
-
-    return fallback;
-  };
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -56,17 +40,11 @@ function Register() {
     setError("");
 
     try {
-      await axios.post(
-        "http://localhost:5000/api/auth/register",
-        {
-          username: form.username.trim(),
-          email: form.email.trim(),
-          password: form.password
-        },
-        {
-          timeout: 10000
-        }
-      );
+      await apiClient.post("/auth/register", {
+        username: form.username.trim(),
+        email: form.email.trim(),
+        password: form.password
+      });
 
       navigate("/login");
     } catch (err) {
