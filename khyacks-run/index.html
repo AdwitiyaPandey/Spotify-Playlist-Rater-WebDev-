@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Khyack's Run — Nepali Folk Chase</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <div id="loading">
+      <h1>Khyack's Run</h1>
+      <p>Loading...</p>
+    </div>
+    <div id="hud" class="hidden">
+      <div id="score-panel">
+        <span id="distance">0m</span>
+        <span id="multiplier">×1</span>
+      </div>
+      <div id="proximity-bar">
+        <div id="proximity-fill"></div>
+        <span id="proximity-label">Pursuer</span>
+      </div>
+      <div id="phase-label"></div>
+    </div>
+    <div id="overlay" class="hidden">
+      <div id="overlay-content"></div>
+    </div>
+    <div id="controls-hint" class="hidden">
+      <kbd>A</kbd><kbd>D</kbd> lanes &nbsp;
+      <kbd>W</kbd> jump &nbsp;
+      <kbd>S</kbd> slide
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
