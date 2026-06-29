@@ -18,4 +18,12 @@ app.get("/", (req, res) => {
   res.json({ message: "Backend running" });
 });
 
+app.use((err, req, res, _next) => {
+  console.error("Unhandled route error:", err.stack || err.message || err);
+  const status = err.status || err.statusCode || 500;
+  res.status(status).json({
+    message: err.expose ? err.message : "Internal server error"
+  });
+});
+
 module.exports = app;

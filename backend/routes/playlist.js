@@ -122,67 +122,69 @@ function normalizeGenreForSeed(rawGenre) {
 }
 
 async function ensurePlaylistsTable() {
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS playlists (
-      id SERIAL PRIMARY KEY,
-      user_id INTEGER,
-      user_email TEXT,
-      name TEXT,
-      playlist_url TEXT,
-      rating INTEGER,
-      top_genre TEXT,
-      feedback TEXT,
-      created_at TIMESTAMP DEFAULT NOW()
-    )
-  `);
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS playlists (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER,
+        user_email TEXT,
+        name TEXT,
+        playlist_url TEXT,
+        rating INTEGER,
+        top_genre TEXT,
+        feedback TEXT,
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
 
-  // Keep older local schemas in sync so history and inserts always work.
-  await pool.query("ALTER TABLE playlists ADD COLUMN IF NOT EXISTS user_id INTEGER");
-  await pool.query("ALTER TABLE playlists ADD COLUMN IF NOT EXISTS user_email TEXT");
-  await pool.query("ALTER TABLE playlists ADD COLUMN IF NOT EXISTS name TEXT");
-  await pool.query("ALTER TABLE playlists ADD COLUMN IF NOT EXISTS playlist_url TEXT");
-  await pool.query("ALTER TABLE playlists ADD COLUMN IF NOT EXISTS rating INTEGER");
-  await pool.query("ALTER TABLE playlists ADD COLUMN IF NOT EXISTS top_genre TEXT");
-  await pool.query("ALTER TABLE playlists ADD COLUMN IF NOT EXISTS feedback TEXT");
-  await pool.query("ALTER TABLE playlists ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW()");
+    // Keep older local schemas in sync so history and inserts always work.
+    await pool.query("ALTER TABLE playlists ADD COLUMN IF NOT EXISTS user_id INTEGER");
+    await pool.query("ALTER TABLE playlists ADD COLUMN IF NOT EXISTS user_email TEXT");
+    await pool.query("ALTER TABLE playlists ADD COLUMN IF NOT EXISTS name TEXT");
+    await pool.query("ALTER TABLE playlists ADD COLUMN IF NOT EXISTS playlist_url TEXT");
+    await pool.query("ALTER TABLE playlists ADD COLUMN IF NOT EXISTS rating INTEGER");
+    await pool.query("ALTER TABLE playlists ADD COLUMN IF NOT EXISTS top_genre TEXT");
+    await pool.query("ALTER TABLE playlists ADD COLUMN IF NOT EXISTS feedback TEXT");
+    await pool.query("ALTER TABLE playlists ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW()");
+  } catch (err) {
+    const wrapped = new Error(`Failed to initialize playlists table: ${err.message}`);
+    wrapped.cause = err;
+    throw wrapped;
+  }
 }
 
 async function savePlaylistAnalysis(payload) {
-  try {
-    await ensurePlaylistsTable();
+  await ensurePlaylistsTable();
 
-    const columnsRes = await pool.query(
-      `
-        SELECT column_name
-        FROM information_schema.columns
-        WHERE table_schema = 'public' AND table_name = 'playlists'
-      `
-    );
+  const columnsRes = await pool.query(
+    `
+      SELECT column_name
+      FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name = 'playlists'
+    `
+  );
 
-    const availableColumns = new Set(columnsRes.rows.map((row) => row.column_name));
+  const availableColumns = new Set(columnsRes.rows.map((row) => row.column_name));
 
-    const candidate = [
-      ["user_id", payload.userId ?? null],
-      ["user_email", payload.userEmail ?? null],
-      ["name", payload.name],
-      ["playlist_url", payload.playlistUrl],
-      ["rating", payload.rating],
-      ["top_genre", payload.topGenre]
-    ].filter(([column]) => availableColumns.has(column));
+  const candidate = [
+    ["user_id", payload.userId ?? null],
+    ["user_email", payload.userEmail ?? null],
+    ["name", payload.name],
+    ["playlist_url", payload.playlistUrl],
+    ["rating", payload.rating],
+    ["top_genre", payload.topGenre]
+  ].filter(([column]) => availableColumns.has(column));
 
-    if (candidate.length === 0) return;
+  if (candidate.length === 0) return;
 
-    const columns = candidate.map(([column]) => column);
-    const values = candidate.map(([, value]) => value);
-    const placeholders = values.map((_, index) => `$${index + 1}`).join(", ");
+  const columns = candidate.map(([column]) => column);
+  const values = candidate.map(([, value]) => value);
+  const placeholders = values.map((_, index) => `$${index + 1}`).join(", ");
 
-    await pool.query(
-      `INSERT INTO playlists (${columns.join(", ")}) VALUES (${placeholders})`,
-      values
-    );
-  } catch (dbError) {
-    console.error("Failed to save playlist analysis:", dbError.message);
-  }
+  await pool.query(
+    `INSERT INTO playlists (${columns.join(", ")}) VALUES (${placeholders})`,
+    values
+  );
 }
 
 router.post("/analyze", async (req, res) => {
@@ -197,14 +199,18 @@ router.post("/analyze", async (req, res) => {
     if (!hasSpotifyCredentials()) {
       const fallback = buildFallbackAnalysis(playlistId, playlistUrl);
 
-      await savePlaylistAnalysis({
-        userId,
-        userEmail,
-        name: fallback.playlistName,
-        playlistUrl,
-        rating: fallback.rating,
-        topGenre: fallback.topGenre
-      });
+      try {
+        await savePlaylistAnalysis({
+          userId,
+          userEmail,
+          name: fallback.playlistName,
+          playlistUrl,
+          rating: fallback.rating,
+          topGenre: fallback.topGenre
+        });
+      } catch (saveErr) {
+        console.error("Failed to save fallback playlist analysis:", saveErr.message);
+      }
 
       return res.json(fallback);
     }
@@ -281,14 +287,18 @@ router.post("/analyze", async (req, res) => {
       artist: track.artists[0].name
     }));
 
-    await savePlaylistAnalysis({
-      userId,
-      userEmail,
-      name: playlistName,
-      playlistUrl,
-      rating,
-      topGenre
-    });
+    try {
+      await savePlaylistAnalysis({
+        userId,
+        userEmail,
+        name: playlistName,
+        playlistUrl,
+        rating,
+        topGenre
+      });
+    } catch (saveErr) {
+      console.error("Failed to save playlist analysis:", saveErr.message);
+    }
 
     res.json({
       playlistName,
@@ -297,7 +307,7 @@ router.post("/analyze", async (req, res) => {
       recommendations
     });
   } catch (err) {
-    console.log(err.response?.data || err.message);
+    console.error("Analyze error:", err.response?.data || err.message);
 
     if (err.message === "SPOTIFY_CREDENTIALS_MISSING") {
       return res.status(500).json({
@@ -305,7 +315,8 @@ router.post("/analyze", async (req, res) => {
       });
     }
 
-    res.status(500).json({ message: "Failed to analyze playlist" });
+    const status = err.response?.status || 500;
+    res.status(status).json({ message: "Failed to analyze playlist" });
   }
 });
 

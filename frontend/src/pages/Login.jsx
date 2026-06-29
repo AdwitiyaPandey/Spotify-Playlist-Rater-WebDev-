@@ -13,7 +13,13 @@ function Login() {
   const navigate = useNavigate();
 
   const getErrorMessage = (err, fallback) => {
-    const responseData = err.response?.data;
+    if (err.code === "ECONNABORTED") {
+      return "Request timed out. Please try again.";
+    }
+    if (!err.response) {
+      return "Cannot reach server. Make sure the backend is running.";
+    }
+    const responseData = err.response.data;
     if (typeof responseData === "string") return responseData;
     if (responseData?.message) return responseData.message;
     return fallback;
@@ -44,11 +50,7 @@ function Login() {
       localStorage.setItem("authUser", JSON.stringify(res.data));
       navigate("/dashboard");
     } catch (err) {
-      if (err.code === "ECONNABORTED") {
-        setError("Login timed out after 5 seconds. Please try again.");
-      } else {
-        setError(getErrorMessage(err, "Login failed. Please try again."));
-      }
+      setError(getErrorMessage(err, "Login failed. Please try again."));
     } finally {
       setLoading(false);
     }

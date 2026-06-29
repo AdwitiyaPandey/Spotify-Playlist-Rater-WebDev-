@@ -25,7 +25,13 @@ function Dashboard() {
   }
 
   const getErrorMessage = (err, fallback) => {
-    const responseData = err.response?.data;
+    if (err.code === "ECONNABORTED") {
+      return "Request timed out. Please try again.";
+    }
+    if (!err.response) {
+      return "Cannot reach server. Make sure the backend is running.";
+    }
+    const responseData = err.response.data;
     if (typeof responseData === "string") return responseData;
     if (responseData?.message) return responseData.message;
     return fallback;

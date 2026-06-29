@@ -19,7 +19,14 @@ function AdminRoute({ children }) {
 
   if (!userRaw) return <Navigate to="/login" replace />;
 
-  const user = JSON.parse(userRaw);
+  let user;
+  try {
+    user = JSON.parse(userRaw);
+  } catch {
+    localStorage.removeItem("authUser");
+    return <Navigate to="/login" replace />;
+  }
+
   const isAdmin = user?.is_admin || user?.role === "admin";
 
   if (!isAdmin) return <Navigate to="/dashboard" replace />;
