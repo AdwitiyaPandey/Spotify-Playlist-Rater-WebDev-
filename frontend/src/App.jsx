@@ -3,9 +3,10 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import AdminDashboard from "./pages/AdminDashboard";
+import { getAuthUser, isAdmin } from "./utils/auth";
 
 function ProtectedRoute({ children }) {
-  const user = localStorage.getItem("authUser");
+  const user = getAuthUser();
 
   if (!user) {
     return <Navigate to="/login" replace />;
@@ -15,14 +16,10 @@ function ProtectedRoute({ children }) {
 }
 
 function AdminRoute({ children }) {
-  const userRaw = localStorage.getItem("authUser");
+  const user = getAuthUser();
 
-  if (!userRaw) return <Navigate to="/login" replace />;
-
-  const user = JSON.parse(userRaw);
-  const isAdmin = user?.is_admin || user?.role === "admin";
-
-  if (!isAdmin) return <Navigate to="/dashboard" replace />;
+  if (!user) return <Navigate to="/login" replace />;
+  if (!isAdmin(user)) return <Navigate to="/dashboard" replace />;
 
   return children;
 }

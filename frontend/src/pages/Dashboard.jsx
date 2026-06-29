@@ -1,11 +1,8 @@
-import { useState } from "react";
-import { useEffect } from "react";
-import { useCallback } from "react";
-import axios from "axios";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { apiClient, getErrorMessage } from "../utils/api";
+import { getAuthUser, isAdmin, logout } from "../utils/auth";
 import "../styles/dashboard.css";
-
-const API_BASE = "http://localhost:5000/api";
 
 function Dashboard() {
   const [url, setUrl] = useState("");
@@ -17,24 +14,12 @@ function Dashboard() {
   const [activeView, setActiveView] = useState("analyze");
 
   const navigate = useNavigate();
-  let user = null;
-  try {
-    user = JSON.parse(localStorage.getItem("authUser") || "null");
-  } catch {
-    user = null;
-  }
-
-  const getErrorMessage = (err, fallback) => {
-    const responseData = err.response?.data;
-    if (typeof responseData === "string") return responseData;
-    if (responseData?.message) return responseData.message;
-    return fallback;
-  };
+  const user = getAuthUser();
 
   const fetchHistory = useCallback(async () => {
     setHistoryLoading(true);
     try {
-      const res = await axios.get(`${API_BASE}/playlist/history`, {
+      const res = await apiClient.get("/playlist/history", {
         params: {
           userId: user?.id,
           email: user?.email
@@ -52,10 +37,7 @@ function Dashboard() {
     fetchHistory();
   }, [fetchHistory]);
 
-  const logout = () => {
-    localStorage.removeItem("authUser");
-    navigate("/login");
-  };
+  const handleLogout = () => logout(navigate);
 
   const analyze = async () => {
     if (!url.trim()) {
@@ -66,17 +48,11 @@ function Dashboard() {
     setError("");
     setLoading(true);
     try {
-      const res = await axios.post(
-        `${API_BASE}/playlist/analyze`,
-        {
-          playlistUrl: url,
-          userId: user?.id || null,
-          userEmail: user?.email || null
-        },
-        {
-          timeout: 10000
-        }
-      );
+      const res = await apiClient.post("/playlist/analyze", {
+        playlistUrl: url,
+        userId: user?.id || null,
+        userEmail: user?.email || null
+      });
       setResult(res.data);
       setActiveView("analyze");
       fetchHistory();
@@ -109,14 +85,14 @@ function Dashboard() {
           >
             My Ratings
           </button>
-          {user?.is_admin || user?.role === "admin" ? (
+          {isAdmin(user) ? (
             <button className="nav-btn" onClick={() => navigate("/admin")}>
               Admin Panel
             </button>
           ) : null}
         </nav>
 
-        <button className="logout-btn" onClick={logout}>
+        <button className="logout-btn" onClick={handleLogout}>
           Logout
         </button>
       </aside>
